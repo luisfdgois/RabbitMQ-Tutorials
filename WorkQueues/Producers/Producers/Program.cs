@@ -33,7 +33,7 @@ while (count < 1000)
 
     Console.WriteLine($"Sent: {message}");
 
-    Thread.Sleep(500);
+    //Thread.Sleep(500);
 
     count++;
 }
