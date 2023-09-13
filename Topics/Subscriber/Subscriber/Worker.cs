@@ -8,8 +8,9 @@ namespace Consumer
     {
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            const string exchange = "direct_logs", queueName = "logs";
+            const string exchange = "topic_logs", queueName = "logs";
             string providedName = Environment.GetEnvironmentVariable("provided_name") ?? "subscriber";
+            string bindingKey = Environment.GetEnvironmentVariable("binding_key") ?? "*.*";
 
             var factory = new ConnectionFactory { HostName = "localhost" };
             factory.ClientProvidedName = providedName;
@@ -18,8 +19,9 @@ namespace Consumer
             using var channel = connection.CreateModel();
 
             channel.QueueDeclare(queue: queueName, exclusive: false);
-            channel.ExchangeDeclare(exchange: exchange, type: ExchangeType.Direct);
-            channel.QueueBind(queueName: queueName, exchange: exchange);
+            //var queueName = channel.QueueDeclare().QueueName;
+            channel.ExchangeDeclare(exchange: exchange, type: ExchangeType.Topic);
+            channel.QueueBind(queue: queueName, exchange: exchange, routingKey: bindingKey);
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -38,24 +40,6 @@ namespace Consumer
 
                 await Task.Delay(1000, cancellationToken);
             }
-        }
-    }
-
-    public static class Extensions
-    {
-        public static void QueueBind(this IModel channel, string queueName, string exchange)
-        {
-            var binds = GetRandomAvailableBinds();
-
-            foreach (var bind in binds)
-                channel.QueueBind(queue: queueName, exchange: exchange, routingKey: bind);
-        }
-
-        static IEnumerable<string> GetRandomAvailableBinds()
-        {
-            var random = new Random();
-
-            return new[] { "Info", "Warning", "Error" }.Take(random.Next(0, 3));
         }
     }
 }
